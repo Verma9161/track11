@@ -1,0 +1,215 @@
+from pathlib import Path
+src = Path("/mnt/data/Pasted text.txt")
+html = src.read_text(encoding="utf-8")
+
+# Make an updated version with the requested features and fixes.
+html = html.replace(
+"      --danger: #dc2626;\n    }",
+"""      --danger: #dc2626;
+      --muted: #64748b;
+      --surface: #f1f5f9;
+    }
+    body.dark-theme {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --text: #e2e8f0;
+      --border: #334155;
+      --muted: #94a3b8;
+      --surface: #334155;
+    }
+    body.dark-theme header h1 { color: #f8fafc; }
+    body.dark-theme header p,
+    body.dark-theme .card h3 { color: var(--muted); }
+    body.dark-theme form label { color: #cbd5e1; }
+    body.dark-theme form input,
+    body.dark-theme form select {
+      background: #0f172a; color: var(--text); border-color: var(--border);
+    }
+    body.dark-theme th { background: var(--surface); color: #e2e8f0; }
+    body.dark-theme td { color: var(--text); }
+    body.dark-theme .export-btn { background: #475569; }"""
+)
+html = html.replace("color: #64748b;", "color: var(--muted);")
+html = html.replace("background: #f1f5f9; color: #475569;", "background: var(--surface); color: var(--muted);")
+html = html.replace(
+"    .export-btn { width: auto; padding: 6px 12px; background: #64748b; font-size: 0.85rem; }\n  </style>",
+"""    .export-btn { width: auto; padding: 6px 12px; background: #64748b; font-size: 0.85rem; }
+    .top-actions { display: flex; justify-content: center; margin-top: 14px; }
+    .theme-btn, .chart-btn { width: auto; padding: 9px 14px; }
+    .theme-btn { background: #334155; }
+    .table-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .chart-btn { background: #0f766e; font-size: 0.85rem; }
+    .chart-help { color: var(--muted); font-size: 0.9rem; margin: 8px 0 14px; }
+    .chart-wrap { width: 100%; overflow-x: auto; }
+    .chart-insights { margin-top: 12px; line-height: 1.7; font-size: 0.9rem; }
+    [hidden] { display: none !important; }
+    @media (max-width: 600px) {
+      body { padding: 12px; }
+      .card { padding: 15px; }
+      .header-actions { align-items: flex-start; gap: 10px; flex-direction: column; }
+      table { display: block; overflow-x: auto; white-space: nowrap; }
+    }
+  </style>"""
+)
+html = html.replace(
+'    <p>Track your income, expenses, and savings automatically</p>\n  </header>',
+'    <p>Track your income, expenses, investments, and savings</p>\n    <div class="top-actions"><button type="button" class="theme-btn" id="themeToggle">🌙 Dark mode</button></div>\n  </header>'
+)
+html = html.replace(
+'            <option value="Income / Paycheck">Income / Paycheck</option>',
+'            <option value="Income / Paycheck">Income / Paycheck</option>\n            <option value="Investment">Investment</option>'
+)
+html = html.replace(
+'          <button class="export-btn" id="exportBtn">Export CSV</button>',
+'          <div class="table-actions"><button class="export-btn" id="exportBtn">Export CSV</button><button class="chart-btn" type="button" id="toggleChartBtn" aria-expanded="false">📊 View charts</button></div>'
+)
+html = html.replace(
+'      </div>\n    </div>\n  </div>\n\n  <script>',
+'''      </div>
+      <section class="card" id="chartPanel" hidden style="margin-top:20px;">
+        <h3>Expenses by Category</h3>
+        <p class="chart-help">Categories are sorted from highest to lowest. Investments are tracked separately from everyday spending.</p>
+        <div class="chart-wrap"><canvas id="categoryChart" height="260" aria-label="Bar chart of expenses by category"></canvas></div>
+        <div id="chartInsights" class="chart-insights" aria-live="polite"></div>
+      </section>
+    </div>
+  </div>
+
+  <script>'''
+)
+html = html.replace(
+"""    const categories = [
+      'Rent', 'Car Payment', 'Gas', 'Car Maintenance', 'Groceries',
+      'Eating Out', 'Shopping', 'Phone Bill', 'Insurance', 'Subscription',
+      'Health', 'Entertainment', 'Others'
+    ];""",
+"""    const categories = [
+      'Investment', 'Rent', 'Car Payment', 'Gas', 'Car Maintenance', 'Groceries',
+      'Eating Out', 'Shopping', 'Phone Bill', 'Insurance', 'Subscription',
+      'Health', 'Entertainment', 'Others'
+    ];"""
+)
+# Ensure expense category breakdown includes investments, but chart excludes investments from daily spending.
+# Add a clear investment total to the summary cards.
+html = html.replace(
+'    <div class="card">\n      <h3>Savings Rate</h3>\n      <div class="value" id="savingsRate">0.0%</div>\n    </div>',
+'    <div class="card">\n      <h3>Savings Rate</h3>\n      <div class="value" id="savingsRate">0.0%</div>\n    </div>\n    <div class="card">\n      <h3>Total Investments</h3>\n      <div class="value" id="totalInvestments">$0.00</div>\n    </div>'
+)
+html = html.replace(
+"      let totalExpenses = 0;\n      const catTotals = {};",
+"      let totalExpenses = 0;\n      let totalInvestments = 0;\n      const catTotals = {};"
+)
+html = html.replace(
+"""        } else {
+          totalExpenses += t.amount;
+          if (catTotals[t.category] !== undefined) {
+            catTotals[t.category] += t.amount;
+          }
+        }""",
+"""        } else {
+          totalExpenses += t.amount;
+          if (t.category === 'Investment') totalInvestments += t.amount;
+          if (catTotals[t.category] !== undefined) {
+            catTotals[t.category] += t.amount;
+          }
+        }"""
+)
+html = html.replace(
+"      document.getElementById('savingsRate').textContent = `${savingsRate}%`;",
+"      document.getElementById('savingsRate').textContent = `${savingsRate}%`;\n      document.getElementById('totalInvestments').textContent = `$${totalInvestments.toFixed(2)}`;"
+)
+# Fix add entry form reset selection and ensure IDs are unique if same millisecond
+html = html.replace("transactions.push({ id: Date.now(), amount, category, date });",
+"transactions.push({ id: Date.now() + Math.floor(Math.random() * 1000), amount, category, date });")
+# Add theme/chart JS before export handler
+html = html.replace(
+"    document.getElementById('exportBtn').addEventListener('click', () => {",
+'''    // Persist the chosen theme in this browser.
+    const themeToggle = document.getElementById('themeToggle');
+    const chartPanel = document.getElementById('chartPanel');
+
+    function applyTheme(theme) {
+      const dark = theme === 'dark';
+      document.body.classList.toggle('dark-theme', dark);
+      themeToggle.textContent = dark ? '☀️ Light mode' : '🌙 Dark mode';
+      localStorage.setItem('budget_theme', dark ? 'dark' : 'light');
+      if (!chartPanel.hidden) renderChart();
+    }
+
+    themeToggle.addEventListener('click', () => {
+      applyTheme(document.body.classList.contains('dark-theme') ? 'light' : 'dark');
+    });
+    applyTheme(localStorage.getItem('budget_theme') || 'light');
+
+    document.getElementById('toggleChartBtn').addEventListener('click', () => {
+      const show = chartPanel.hidden;
+      chartPanel.hidden = !show;
+      const btn = document.getElementById('toggleChartBtn');
+      btn.textContent = show ? '✖ Hide charts' : '📊 View charts';
+      btn.setAttribute('aria-expanded', String(show));
+      if (show) renderChart();
+    });
+
+    function renderChart() {
+      const canvas = document.getElementById('categoryChart');
+      const ctx = canvas.getContext('2d');
+      const dark = document.body.classList.contains('dark-theme');
+      const textColor = dark ? '#e2e8f0' : '#334155';
+      const gridColor = dark ? '#475569' : '#e2e8f0';
+      const totals = {};
+      transactions.forEach(t => {
+        if (t.category !== 'Income / Paycheck' && t.category !== 'Investment') {
+          totals[t.category] = (totals[t.category] || 0) + Number(t.amount || 0);
+        }
+      });
+      const entries = Object.entries(totals).sort((a, b) => b[1] - a[1]);
+      const width = Math.max(320, canvas.parentElement.clientWidth - 2);
+      const rowHeight = 34;
+      const height = Math.max(220, entries.length * rowHeight + 35);
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      canvas.style.width = width + 'px';
+      canvas.style.height = height + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, width, height);
+
+      if (entries.length === 0) {
+        ctx.fillStyle = textColor;
+        ctx.font = '14px sans-serif';
+        ctx.fillText('Add expense transactions to see the chart.', 10, 30);
+      } else {
+        const labelWidth = Math.min(135, Math.max(95, width * 0.32));
+        const valueWidth = 78;
+        const barWidth = Math.max(30, width - labelWidth - valueWidth - 20);
+        const max = entries[0][1] || 1;
+        ctx.font = '12px sans-serif';
+        entries.forEach(([label, value], index) => {
+          const y = 20 + index * rowHeight;
+          ctx.textAlign = 'left';
+          ctx.fillStyle = textColor;
+          ctx.fillText(label.length > 17 ? label.slice(0, 16) + '…' : label, 6, y + 13);
+          ctx.fillStyle = gridColor;
+          ctx.fillRect(labelWidth, y, barWidth, 18);
+          ctx.fillStyle = '#3b82f6';
+          ctx.fillRect(labelWidth, y, Math.max(value > 0 ? 2 : 0, barWidth * value / max), 18);
+          ctx.textAlign = 'right';
+          ctx.fillStyle = textColor;
+          ctx.fillText('$' + value.toFixed(2), width - 5, y + 13);
+        });
+      }
+
+      const insight = document.getElementById('chartInsights');
+      if (entries.length === 0) {
+        insight.textContent = 'No everyday expenses recorded yet.';
+      } else {
+        const highest = entries[0];
+        const lowest = entries.reduce((a, b) => b[1] < a[1] ? b : a);
+        const everydayTotal = entries.reduce((sum, item) => sum + item[1], 0);
+        const investmentTotal = transactions
+          .filter(t => t.category === 'Investment')
+          .reduce((sum, t) => sum + Number(t.amount || 0), 0);
+        insight.innerHTML =
+          '<strong>Highest:</strong> ' + highest[0] + ' — $' + highest[1].toFixed(2) +
+          '<br><strong>Lowest:</strong> ' + lowest[0] + ' — $' + lowest[1].toFixed(2) +
+         
